@@ -2,46 +2,81 @@ import React, { useState, useEffect } from 'react'
 import Header from './Header'
 import './Dashboard.css'
 
+const API_BASE_URL = "http://localhost:80"
+
 export default function Dashboard() {
+
   const [expenses, setExpenses] = useState([])
+
+  const [totalExpenses, setTotalExpenses] = useState(0); // NEW: backend total
+
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
+
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    category: '',
+    paymentMode: '',
     date: ''
   })
+
   const [filterData, setFilterData] = useState({
-    category: '',
-    date: '',
+    paymentMode: '',
+    dateFrom: '',
+    dateTo: '',
     minAmount: '',
     maxAmount: ''
   })
 
-  // Get today's date in YYYY-MM-DD format for max date validation
-  const getTodayDate = () => {
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = String(today.getMonth() + 1).padStart(2, '0')
-    const day = String(today.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
 
-  const maxDate = getTodayDate()
-
-  // Load expenses from localStorage on mount
+  // --------------------------------------------
+  // OLD: Load expenses from localStorage
+  // --------------------------------------------
+  /*
   useEffect(() => {
     const savedExpenses = localStorage.getItem('expenses')
     if (savedExpenses) {
       setExpenses(JSON.parse(savedExpenses))
     }
   }, [])
+  */
 
-  // Save expenses to localStorage whenever expenses change
+  // --------------------------------------------
+  // NEW: Load all expenses from backend
+  // --------------------------------------------
+  useEffect(() => {
+    loadAllExpenses();
+  }, [])
+
+  const loadAllExpenses = () => {
+    fetch(`${API_BASE_URL}/allExpense`)
+      .then(res => res.json())
+      .then(data => {
+        console.log("All Expenses Response:", data);
+        setExpenses(data);
+      })
+      .catch(err => console.error("Error loading expenses:", err));
+
+    fetch(`${API_BASE_URL}/totalExpenses`)
+      .then(res => res.text())
+      .then(msg => {
+        console.log("Total Expenses Response:", msg);
+        setTotalExpenses(Number(msg) || 0);
+      })
+      .catch(err => console.error("Error loading total expenses:", err));
+  }
+
+
+  // --------------------------------------------
+  // OLD: Save to localStorage on change
+  // --------------------------------------------
+  /*
   useEffect(() => {
     localStorage.setItem('expenses', JSON.stringify(expenses))
   }, [expenses])
+  */
+  // NEW: Backend handles storage → remove this
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -51,130 +86,264 @@ export default function Dashboard() {
     }))
   }
 
+
+  // =====================================================
+  // ADD EXPENSE
+  // =====================================================
+
+  // --------------------------------------------
+  // OLD: Add to local state only
+  // --------------------------------------------
+  /*
   const handleAddExpense = (e) => {
     e.preventDefault()
-    if (!formData.description || !formData.amount || !formData.category || !formData.date) {
-      alert('Please fill in all fields')
-      return
-    }
-
-    // Validate that date is not in the future
-    if (formData.date > maxDate) {
-      alert('Cannot add expenses for future dates. Please select today or a past date.')
-      return
-    }
-
     const newExpense = {
       id: Date.now(),
       ...formData,
       amount: parseFloat(formData.amount)
     }
-    
     setExpenses(prev => [newExpense, ...prev])
-    setFormData({ description: '', amount: '', category: '', date: '' })
-    setShowAddForm(false)
   }
+  */
+
+  // --------------------------------------------
+  // NEW: Add to backend using POST /addExpense
+  // --------------------------------------------
+  const handleAddExpense = (e) => {
+    e.preventDefault();
+
+    const expenseData = {
+      description: formData.description,
+      amount: parseFloat(formData.amount),
+      paymentMode: formData.paymentMode,
+      date: formData.date       // must be yyyy-mm-dd
+    };
+
+    fetch(`${API_BASE_URL}/addExpense`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(expenseData)
+    })
+      .then(res => res.text())
+      .then(msg => {
+        alert("Expense Added");
+        loadAllExpenses();   // refresh list
+        resetForm();
+      })
+      .catch(err => {
+        console.error("Error adding expense:", err);
+      });
+  };
+
+
+
+  // =====================================================
+  // EDIT EXPENSE
+  // =====================================================
 
   const handleEditExpense = (expense) => {
     setEditingExpense(expense)
     setFormData({
       description: expense.description,
       amount: expense.amount,
-      category: expense.category,
+      paymentMode: expense.paymentMode,
       date: expense.date
     })
     setShowAddForm(true)
   }
 
+
+  // --------------------------------------------
+  // OLD: Update in localStorage only
+  // --------------------------------------------
+  /*
   const handleUpdateExpense = (e) => {
     e.preventDefault()
-    if (!formData.description || !formData.amount || !formData.category || !formData.date) {
-      alert('Please fill in all fields')
-      return
-    }
-
-    // Validate that date is not in the future
-    if (formData.date > maxDate) {
-      alert('Cannot update expenses for future dates. Please select today or a past date.')
-      return
-    }
-
-    setExpenses(prev => prev.map(expense => 
+    setExpenses(prev => prev.map(expense =>
       expense.id === editingExpense.id
-        ? { ...expense, ...formData, amount: parseFloat(formData.amount) }
+        ? { ...expense, ...formData }
         : expense
     ))
-    
-    setFormData({ description: '', amount: '', category: '', date: '' })
-    setShowAddForm(false)
-    setEditingExpense(null)
   }
+  */
 
+  // --------------------------------------------
+  // NEW: Update backend using PUT /update/{id}
+  // --------------------------------------------
+  const handleUpdateExpense = (e) => {
+    e.preventDefault();
+
+    const updatedData = {
+  description: formData.description,
+  amount: parseFloat(formData.amount),
+  paymentMode:
+    formData.paymentMode !== "" ? formData.paymentMode : editingExpense.paymentMode,
+  date: formData.date
+};
+
+
+    fetch(`${API_BASE_URL}/update/${editingExpense.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedData)
+    })
+      .then(res => res.text())
+      .then(msg => {
+        console.log("Update Expense Response:", msg);
+        alert("Expense updated");
+        loadAllExpenses();
+        resetForm();
+      })
+      .catch(err => console.error("Error updating expense:", err));
+  };
+
+
+  // =====================================================
+  // DELETE EXPENSE
+  // =====================================================
+
+  // --------------------------------------------
+  // OLD: Delete from local array only
+  // --------------------------------------------
+  /*
   const handleDeleteExpense = (id) => {
-    if (window.confirm('Are you sure you want to delete this expense?')) {
-      setExpenses(prev => prev.filter(expense => expense.id !== id))
-    }
+    setExpenses(prev => prev.filter(expense => expense.id !== id))
   }
+  */
 
-  const handleCancel = () => {
-    setShowAddForm(false)
-    setEditingExpense(null)
-    setFormData({ description: '', amount: '', category: '', date: '' })
-  }
+  // --------------------------------------------
+  // NEW: Delete from backend using DELETE /delete/{id}
+  // --------------------------------------------
+  const handleDeleteExpense = (id) => {
+    if (!window.confirm("Are you sure you want to delete this expense?")) return;
 
+    fetch(`${API_BASE_URL}/delete/${id}`, {
+      method: "DELETE"
+    })
+      .then(res => res.text())
+      .then(msg => {
+        console.log("Delete Expense Response:", msg);
+        loadAllExpenses();
+      })
+      .catch(err => console.error("Error deleting expense:", err));
+  };
+
+
+  // =====================================================
+  // CANCEL & RESET FORM
+  // =====================================================
+  const resetForm = () => {
+    setFormData({
+      description: '',
+      amount: '',
+      paymentMode: '',
+      date: ''
+    });
+    setEditingExpense(null);
+    setShowAddForm(false);
+  };
+
+
+  // =====================================================
+  // FILTERING
+  // =====================================================
+
+  // --------------------------------------------
+  // OLD: Filter on frontend only
+  // --------------------------------------------
+  /*
+  const filteredExpenses = expenses.filter(expense => {
+    if (filterData.category && expense.category !== filterData.category) return false;
+    if (filterData.date && expense.date !== filterData.date) return false;
+    if (filterData.minAmount && expense.amount < filterData.minAmount) return false;
+    if (filterData.maxAmount && expense.amount > filterData.maxAmount) return false;
+    return true;
+  });
+  */
+
+  // --------------------------------------------
+  // NEW: Filter using backend APIs
+  // --------------------------------------------
   const handleFilterChange = (e) => {
-    const { name, value } = e.target
-    setFilterData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
+    const { name, value } = e.target;
+    setFilterData(prev => ({ ...prev, [name]: value }));
+  };
 
+  // Search/Filter function - applies filters when search button is clicked
+  const handleSearchFilters = () => {
+    // Priority: If amount filter has both min and max, use amount filter API
+    if (filterData.minAmount && filterData.maxAmount) {
+      fetch(`${API_BASE_URL}/amountFilter?minAmount=${filterData.minAmount}&maxAmount=${filterData.maxAmount}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log("Amount Filter Response:", data);
+          setExpenses(data);
+        })
+        .catch(err => console.error("Error filtering by amount:", err));
+      return;
+    }
+
+    // If date range is provided (from and/or to)
+    if (filterData.dateFrom || filterData.dateTo) {
+      const from = filterData.dateFrom || filterData.dateTo; // If only one is provided, use it for both
+      const to = filterData.dateTo || filterData.dateFrom;
+      fetch(`${API_BASE_URL}/dateFilter?from=${from}&to=${to}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log("Date Filter Response:", data);
+          setExpenses(data);
+        })
+        .catch(err => console.error("Error filtering by date:", err));
+      return;
+    }
+
+    // If category (paymentMode) is selected
+    if (filterData.paymentMode) {
+      fetch(`${API_BASE_URL}/paymentMode?paymentMode=${filterData.paymentMode}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log("Payment Mode Filter Response:", data);
+          setExpenses(data);
+        })
+        .catch(err => console.error("Error filtering by payment mode:", err));
+      return;
+    }
+
+    // If no filters are applied, reload all expenses
+    loadAllExpenses();
+  };
+
+  // CLEAR FILTERS
   const handleClearFilters = () => {
     setFilterData({
-      category: '',
-      date: '',
+      paymentMode: '',
+      dateFrom: '',
+      dateTo: '',
       minAmount: '',
       maxAmount: ''
-    })
-  }
+    });
 
-  const filteredExpenses = expenses.filter(expense => {
-    if (filterData.category && expense.category !== filterData.category) {
-      return false
-    }
-    if (filterData.date && expense.date !== filterData.date) {
-      return false
-    }
-    if (filterData.minAmount && expense.amount < parseFloat(filterData.minAmount)) {
-      return false
-    }
-    if (filterData.maxAmount && expense.amount > parseFloat(filterData.maxAmount)) {
-      return false
-    }
-    return true
-  })
+    loadAllExpenses();
+  };
 
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0)
 
   return (
     <div className="dashboard-container">
       <Header />
+
       <div className="dashboard-content">
+
         <div className="dashboard-header">
-          <div className="dashboard-title">
-            <h1>Expense Dashboard</h1>
-            <p className="dashboard-subtitle">Track and manage your expenses</p>
-          </div>
+          <h1>Expense Dashboard</h1>
           {!showAddForm && (
-            <button 
+            <button
               className="add-expense-btn"
               onClick={() => setShowAddForm(true)}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
               Add Expense
             </button>
           )}
@@ -182,239 +351,162 @@ export default function Dashboard() {
 
         <div className="expense-stats">
           <div className="stat-card">
-            <div className="stat-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="1" x2="12" y2="23"></line>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-              </svg>
-            </div>
-            <div className="stat-info">
-              <p className="stat-label">Total Expenses</p>
-              <p className="stat-value">${totalExpenses.toFixed(2)}</p>
-            </div>
+            <p className="stat-label">Total Expenses</p>
+            <p className="stat-value">${totalExpenses.toFixed(2)}</p>
           </div>
         </div>
 
+        {/* ADD / EDIT FORM */}
         {showAddForm && (
-          <div className="expense-form-container">
-            <form onSubmit={editingExpense ? handleUpdateExpense : handleAddExpense} className="expense-form">
-              <h2>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</h2>
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <input
-                  type="text"
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  placeholder="What did you spend on?"
-                  className="form-input"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="amount">Amount</label>
-                <input
-                  type="number"
-                  id="amount"
-                  name="amount"
-                  value={formData.amount}
-                  onChange={handleInputChange}
-                  placeholder="0.00"
-                  step="0.01"
-                  className="form-input"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="category">Category</label>
-                <select
-                  id="category"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="form-input"
-                >
-                  <option value="">Select a category</option>
-                  <option value="Food">Food</option>
-                  <option value="Transportation">Transportation</option>
-                  <option value="Shopping">Shopping</option>
-                  <option value="Bills">Bills</option>
-                  <option value="Entertainment">Entertainment</option>
-                  <option value="Healthcare">Healthcare</option>
-                  <option value="Education">Education</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label htmlFor="date">Date</label>
-                <input
-                  type="date"
-                  id="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleInputChange}
-                  max={maxDate}
-                  className="form-input"
-                />
-              </div>
-              <div className="form-actions">
-                <button type="button" onClick={handleCancel} className="cancel-btn">
-                  Cancel
-                </button>
-                <button type="submit" className="submit-btn">
-                  {editingExpense ? 'Update Expense' : 'Add Expense'}
-                </button>
-              </div>
-            </form>
-          </div>
+          <form
+            onSubmit={editingExpense ? handleUpdateExpense : handleAddExpense}
+            className="expense-form"
+          >
+            <h2>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</h2>
+
+            <input
+              type="text"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Description"
+            />
+
+            <input
+              type="number"
+              name="amount"
+              value={formData.amount}
+              onChange={handleInputChange}
+              placeholder="Amount"
+            />
+
+            <select
+              name="paymentMode"
+              value={formData.paymentMode || ""}
+              onChange={handleInputChange}
+            >
+              <option value="">Select Payment Mode</option>
+              <option value="CASH">Cash</option>
+              <option value="CARD">Card</option>
+              <option value="UPI">UPI</option>
+              <option value="NETBANKING">Net Banking</option>
+            </select>
+
+            <input
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={handleInputChange}
+            />
+
+            <button type="submit">
+              {editingExpense ? "Update" : "Add"}
+            </button>
+            <button type="button" onClick={resetForm} className="cancel-btn">
+              Cancel
+            </button>
+          </form>
         )}
 
+        {/* FILTER SECTION */}
         <div className="filter-container">
-          <h2 className="filter-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-            </svg>
-            Filter Expenses
-          </h2>
-          <div className="filter-grid">
+          <h2>Filter Expenses</h2>
+
+          <div className="filter-inputs">
             <div className="filter-group">
-              <label htmlFor="filter-category">Category</label>
-              <select
-                id="filter-category"
-                name="category"
-                value={filterData.category}
-                onChange={handleFilterChange}
-                className="form-input"
-              >
-                <option value="">All Categories</option>
-                <option value="Food">Food</option>
-                <option value="Transportation">Transportation</option>
-                <option value="Shopping">Shopping</option>
-                <option value="Bills">Bills</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Healthcare">Healthcare</option>
-                <option value="Education">Education</option>
-                <option value="Other">Other</option>
+              <label htmlFor="filter-paymentMode">Payment Mode</label>
+              <select id="filter-paymentMode" name="paymentMode" value={filterData.paymentMode || ""} onChange={handleFilterChange}>
+                <option value="">All Payment Modes</option>
+                <option value="CASH">Cash</option>
+                <option value="CARD">Card</option>
+                <option value="UPI">UPI</option>
+                <option value="NETBANKING">Net Banking</option>
               </select>
             </div>
+
             <div className="filter-group">
-              <label htmlFor="filter-date">Date</label>
+              <label htmlFor="filter-date-from">Date From</label>
               <input
                 type="date"
-                id="filter-date"
-                name="date"
-                value={filterData.date}
+                id="filter-date-from"
+                name="dateFrom"
+                value={filterData.dateFrom}
                 onChange={handleFilterChange}
-                className="form-input"
               />
             </div>
+
+            <div className="filter-group">
+              <label htmlFor="filter-date-to">Date To</label>
+              <input
+                type="date"
+                id="filter-date-to"
+                name="dateTo"
+                value={filterData.dateTo}
+                onChange={handleFilterChange}
+              />
+            </div>
+
             <div className="filter-group">
               <label htmlFor="filter-min-amount">Min Amount</label>
               <input
                 type="number"
                 id="filter-min-amount"
                 name="minAmount"
+                placeholder="Min Amount"
                 value={filterData.minAmount}
                 onChange={handleFilterChange}
-                placeholder="0.00"
-                step="0.01"
-                className="form-input"
               />
             </div>
+
             <div className="filter-group">
               <label htmlFor="filter-max-amount">Max Amount</label>
               <input
                 type="number"
                 id="filter-max-amount"
                 name="maxAmount"
+                placeholder="Max Amount"
                 value={filterData.maxAmount}
                 onChange={handleFilterChange}
-                placeholder="0.00"
-                step="0.01"
-                className="form-input"
               />
             </div>
-            <div className="filter-actions">
-              <button onClick={handleClearFilters} className="clear-filter-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-                Clear Filters
-              </button>
-            </div>
           </div>
-          {(filterData.category || filterData.date || filterData.minAmount || filterData.maxAmount) && (
-            <div className="filter-results">
-              Showing {filteredExpenses.length} of {expenses.length} expenses
-            </div>
-          )}
-        </div>
 
-        <div className="expenses-list-container">
-          <h2 className="expenses-list-title">All Expenses</h2>
-          {expenses.length === 0 ? (
-            <div className="empty-state">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.3">
-                <line x1="12" y1="1" x2="12" y2="23"></line>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-              </svg>
-              <p>No expenses yet. Add your first expense to get started!</p>
-            </div>
-          ) : filteredExpenses.length === 0 ? (
-            <div className="empty-state">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.3">
+          <div className="filter-actions">
+            <button onClick={handleSearchFilters} className="search-filter-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <path d="M21 21l-4.35-4.35"></path>
               </svg>
-              <p>No expenses match your filter criteria. Try adjusting your filters.</p>
+              Search
+            </button>
+            <button onClick={handleClearFilters} className="clear-filter-btn">Clear</button>
+          </div>
+        </div>
+
+        {/* EXPENSES DISPLAY BLOCK */}
+        <div className="expenses-display-container">
+          <div className="expenses-display-header">
+            <h2>All Expenses</h2>
+            <p className="expenses-count">Total: {expenses.length} expense{expenses.length !== 1 ? 's' : ''}</p>
+          </div>
+
+          {expenses.length === 0 ? (
+            <div className="empty-expenses-state">
+              <p>No expenses found. Add your first expense to get started!</p>
             </div>
           ) : (
             <div className="expenses-list">
-              {filteredExpenses.map(expense => (
+              {expenses.map((expense) => (
                 <div key={expense.id} className="expense-card">
-                  <div className="expense-card-header">
-                    <div className="expense-category">
-                      <span className="category-badge">{expense.category}</span>
-                    </div>
-                    <div className="expense-amount">${expense.amount.toFixed(2)}</div>
+                  <div className="expense-card-content">
+                    <h3>{expense.description}</h3>
+                    <p className="expense-amount-display">${expense.amount.toFixed(2)}</p>
+                    <p className="expense-payment-mode">{expense.paymentMode || expense.paymentMode}</p>
+                    <p className="expense-date-display">{expense.date}</p>
                   </div>
-                  <div className="expense-details">
-                    <h3 className="expense-description">{expense.description}</h3>
-                    <p className="expense-date">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                      </svg>
-                      {new Date(expense.date).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </p>
-                  </div>
-                  <div className="expense-actions">
-                    <button 
-                      onClick={() => handleEditExpense(expense)}
-                      className="edit-btn"
-                      title="Edit expense"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteExpense(expense.id)}
-                      className="delete-btn"
-                      title="Delete expense"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      </svg>
-                    </button>
+                  <div className="expense-card-actions">
+                    <button onClick={() => handleEditExpense(expense)}>Edit</button>
+                    <button onClick={() => handleDeleteExpense(expense.id)}>Delete</button>
                   </div>
                 </div>
               ))}
