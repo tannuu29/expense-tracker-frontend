@@ -50,7 +50,6 @@ export default function UpdateProfile() {
 
     setIsLoading(true)
     try {
-      // IMPORTANT: backend uses Principal, so we do NOT send username in request body
       const res = await fetch(`${API_BASE_URL}/profile`, {
         method: 'PUT',
         headers: {
@@ -64,21 +63,29 @@ export default function UpdateProfile() {
         }),
       })
 
-      if (res.status === 401 || res.status === 403) {
+      // 🔥 HANDLE AUTH PROPERLY
+      if (res.status === 401) {
         localStorage.removeItem('token')
-        setStatus({
-          type: 'error',
-          message: 'You are not authorized. Please login again.',
-        })
+        setStatus({ type: 'error', message: 'Session expired. Please login again.' })
         return
       }
 
-      const data = await res.json().catch(() => ({}))
+      if (res.status === 403) {
+        setStatus({ type: 'error', message: 'You are not allowed to update profile.' })
+        return
+      }
+
       if (!res.ok) {
-        setStatus({ type: 'error', message: data.message || 'Profile update failed. Please try again.' })
+        let message = 'Profile update failed. Please try again.'
+        try {
+          const data = await res.json()
+          message = data.message || message
+        } catch {}
+        setStatus({ type: 'error', message })
         return
       }
 
+      const data = await res.json()
       setStatus({ type: 'success', message: data.message || 'Profile updated successfully' })
     } catch (err) {
       setStatus({ type: 'error', message: 'Network error. Please try again.' })
