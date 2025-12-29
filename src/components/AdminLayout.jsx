@@ -6,7 +6,7 @@ export default function AdminLayout() {
   return (
     <div>
       <AdminHeader />
-      <main style={{ maxWidth: 1100, margin: "0 auto", padding: 16 }}>
+      <main>
         <Outlet />
       </main>
     </div>

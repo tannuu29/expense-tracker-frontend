@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchWithAuth } from "../utils/auth";
+import "./AdminUsers.css";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [filter, setFilter] = useState("all"); // 'all', 'users', 'admins'
 
   const role = localStorage.getItem("role");
 
@@ -58,74 +60,145 @@ export default function AdminUsers() {
     }
   }, [role]);
 
+  // Helper function to normalize role
+  const normalizeRole = (role) => {
+    if (!role) return "";
+    return String(role).toUpperCase().trim();
+  };
+
+  // Filter users based on selected filter
+  const filteredUsers = users.filter((user) => {
+    const userRole = normalizeRole(user?.role);
+    if (filter === "users") {
+      // Show users (non-admin roles, including empty/null roles)
+      return userRole !== "ADMIN";
+    } else if (filter === "admins") {
+      // Show only admins
+      return userRole === "ADMIN";
+    }
+    return true; // 'all' shows everyone
+  });
+
+  // Calculate stats
+  const totalUsers = users.filter(
+    (u) => normalizeRole(u?.role) !== "ADMIN"
+  ).length;
+  const totalAdmins = users.filter(
+    (u) => normalizeRole(u?.role) === "ADMIN"
+  ).length;
+  const totalAll = users.length;
+
   return (
-    <div style={{ padding: 16 }}>
-      <h2>Admin: Users</h2>
+    <div className="admin-users-container">
+      <div className="admin-users-content">
+        <div className="admin-users-header">
+          <h2>Admin Dashboard</h2>
 
-      {loading && <p>Loading users…</p>}
-      {!loading && error && <p style={{ color: "crimson" }}>{error}</p>}
+          {/* Stats Cards */}
+          <div className="stats-container">
+            <div className="stat-card">
+              <div className="stat-card-label">Total Users</div>
+              <div className="stat-card-value">{totalAll}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-card-label">Regular Users</div>
+              <div className="stat-card-value">{totalUsers}</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-card-label">Admins</div>
+              <div className="stat-card-value">{totalAdmins}</div>
+            </div>
+          </div>
 
-      {!loading && !error && (
-        <div style={{ overflowX: "auto" }}>
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              marginTop: 12,
-            }}
-          >
-            <thead>
-              <tr>
-                <th style={thStyle}>ID</th>
-                <th style={thStyle}>Username</th>
-                <th style={thStyle}>Email</th>
-                <th style={thStyle}>Role</th>
-                <th style={thStyle}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.length === 0 ? (
+          {/* Filter Tabs */}
+          <div className="filter-tabs">
+            <button
+              className={`filter-tab ${filter === "all" ? "active" : ""}`}
+              onClick={() => setFilter("all")}
+            >
+              All Users ({totalAll})
+            </button>
+            <button
+              className={`filter-tab ${filter === "users" ? "active" : ""}`}
+              onClick={() => setFilter("users")}
+            >
+              Users ({totalUsers})
+            </button>
+            <button
+              className={`filter-tab ${filter === "admins" ? "active" : ""}`}
+              onClick={() => setFilter("admins")}
+            >
+              Admins ({totalAdmins})
+            </button>
+          </div>
+        </div>
+
+        {loading && (
+          <div className="loading-state">Loading users…</div>
+        )}
+        {!loading && error && (
+          <div className="error-state">{error}</div>
+        )}
+
+        {!loading && !error && (
+          <div className="users-table-container">
+            <table className="users-table">
+              <thead>
                 <tr>
-                  <td style={tdStyle} colSpan={5}>
-                    No users found.
-                  </td>
+                  <th>ID</th>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Actions</th>
                 </tr>
-              ) : (
-                users.map((u, idx) => (
-                  <tr key={u?.id ?? u?._id ?? idx}>
-                    <td style={tdStyle}>{u?.id ?? u?._id ?? "-"}</td>
-                    <td style={tdStyle}>
-                      {u?.username ?? u?.name ?? u?.email ?? "-"}
-                    </td>
-                    <td style={tdStyle}>{u?.email ?? "-"}</td>
-                    <td style={tdStyle}>{u?.role ?? "-"}</td>
-                    <td style={tdStyle}>
-                      <Link to={`/admin/users/${u?.id ?? u?._id ?? ""}`}>
-                        View
-                      </Link>
+              </thead>
+              <tbody>
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="empty-state">
+                      <div className="empty-state-icon">👥</div>
+                      <div>No {filter === "all" ? "" : filter} found.</div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+                ) : (
+                  filteredUsers.map((u, idx) => {
+                    const userRole = normalizeRole(u?.role);
+                    const isAdmin = userRole === "ADMIN";
+                    return (
+                      <tr key={u?.id ?? u?._id ?? idx}>
+                        <td>{u?.id ?? u?._id ?? "-"}</td>
+                        <td>
+                          {u?.username ?? u?.name ?? u?.email ?? "-"}
+                        </td>
+                        <td>{u?.email ?? "-"}</td>
+                        <td>
+                          <span
+                            className={`role-badge ${
+                              isAdmin ? "admin" : "user"
+                            }`}
+                          >
+                            {userRole || "USER"}
+                          </span>
+                        </td>
+                        <td>
+                          <Link
+                            to={`/admin/users/${u?.id ?? u?._id ?? ""}`}
+                            className="view-link"
+                          >
+                            View Details
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
-const thStyle = {
-  textAlign: "left",
-  padding: 10,
-  borderBottom: "1px solid #ddd",
-  whiteSpace: "nowrap",
-};
-
-const tdStyle = {
-  padding: 10,
-  borderBottom: "1px solid #eee",
-  whiteSpace: "nowrap",
-};
 
 

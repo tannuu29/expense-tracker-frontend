@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import "./AdminHeader.css";
 
 export default function AdminHeader() {
   const navigate = useNavigate();
@@ -11,24 +12,21 @@ export default function AdminHeader() {
   };
 
   return (
-    <header style={{ padding: 16, borderBottom: "1px solid #eee" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          maxWidth: 1100,
-          margin: "0 auto",
-        }}
-      >
-        <Link to="/admin/users" style={{ textDecoration: "none", fontWeight: 700 }}>
+    <header className="admin-header">
+      <div className="admin-header-container">
+        <Link to="/admin/users" className="admin-header-logo">
           MoneyMap Admin
         </Link>
 
-        <nav style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <NavLink to="/admin/users">Users</NavLink>
-          <button type="button" onClick={handleLogout}>
+        <nav className="admin-header-nav">
+          <NavLink to="/admin/users" className="admin-header-nav-link">
+            Users
+          </NavLink>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="admin-header-logout-btn"
+          >
             Logout
           </button>
         </nav>
