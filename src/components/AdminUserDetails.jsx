@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { fetchWithAuth, API_BASE_URL } from "../utils/auth";
 
 export default function AdminUserDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Check role-based access
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    if (role !== "ADMIN") {
+      navigate("/dashboard");
+      return;
+    }
+  }, [navigate]);
 
   useEffect(() => {
     async function load() {
@@ -25,6 +35,12 @@ export default function AdminUserDetails() {
         const res = await fetchWithAuth(`${API_BASE_URL}/admin/user/${id}`, {
           method: "GET",
         });
+
+        if (res.status === 401 || res.status === 403) {
+          setError("Unauthorized. Please login again.");
+          setLoading(false);
+          return;
+        }
 
         if (!res.ok) {
           let message = `Request failed (${res.status})`;
@@ -46,7 +62,10 @@ export default function AdminUserDetails() {
       }
     }
 
-    load();
+    const role = localStorage.getItem("role");
+    if (role === "ADMIN") {
+      load();
+    }
   }, [id]);
 
   return (
@@ -62,18 +81,32 @@ export default function AdminUserDetails() {
 
       {!loading && !error && user && (
         <div style={{ border: "1px solid #eee", padding: 12, borderRadius: 8 }}>
+          {/* Map backend fields: userId, name, username, email, mobile, role, lastActiveAt */}
           <p>
-            <strong>ID:</strong> {user?.id ?? user?._id ?? "-"}
+            <strong>ID:</strong> {user?.userId ?? user?.id ?? user?._id ?? "-"}
           </p>
           <p>
-            <strong>Name:</strong> {user?.name ?? user?.username ?? "-"}
+            <strong>Name:</strong> {user?.name ?? "-"}
+          </p>
+          <p>
+            <strong>Username:</strong> {user?.username ?? "-"}
           </p>
           <p>
             <strong>Email:</strong> {user?.email ?? "-"}
           </p>
+          {user?.mobile && (
+            <p>
+              <strong>Mobile:</strong> {user.mobile}
+            </p>
+          )}
           <p>
             <strong>Role:</strong> {user?.role ?? "-"}
           </p>
+          {user?.lastActiveAt && (
+            <p>
+              <strong>Last Active:</strong> {new Date(user.lastActiveAt).toLocaleString()}
+            </p>
+          )}
         </div>
       )}
     </div>
