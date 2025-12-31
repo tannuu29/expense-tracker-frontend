@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchWithAuth, API_BASE_URL } from "../utils/auth";
+import { formatDate, getActivityStatus } from "../utils/dateUtils";
 import "./AdminUsers.css";
 
 export default function AdminUsers() {
@@ -267,25 +268,34 @@ export default function AdminUsers() {
                   <th>Username</th>
                   <th>Email</th>
                   <th>Role</th>
+                  <th>Status</th>
+                  <th>Created At</th>
+                  <th>Last Active</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="empty-state">
+                    <td colSpan={8} className="empty-state">
                       <div className="empty-state-icon">👥</div>
                       <div>No {filter === "all" ? "" : filter} found.</div>
                     </td>
                   </tr>
                 ) : (
                   filteredUsers.map((u, idx) => {
-                    // Map backend fields: userId, name, username, email, mobile, role, lastActiveAt
+                    // Map backend fields: userId, name, username, email, mobile, role, createdAt, lastActiveAt
                     const userId = u?.userId ?? u?.id ?? u?._id ?? idx;
                     const username = u?.username ?? u?.name ?? "-";
                     const email = u?.email ?? "-";
                     const userRole = normalizeRole(u?.role);
                     const isAdmin = userRole === "ADMIN";
+                    const createdAt = u?.createdAt;
+                    const lastActiveAt = u?.lastActiveAt;
+                    
+                    // Get activity status
+                    const activityStatus = getActivityStatus(lastActiveAt);
+                    
                     return (
                       <tr key={userId}>
                         <td>{userId}</td>
@@ -300,6 +310,22 @@ export default function AdminUsers() {
                             {userRole || "USER"}
                           </span>
                         </td>
+                        <td>
+                          <div className="activity-status">
+                            <span
+                              className={`status-dot ${
+                                activityStatus.isOnline ? "online" : "offline"
+                              }`}
+                            ></span>
+                            <span className="status-text">
+                              {activityStatus.isOnline
+                                ? "Active now"
+                                : activityStatus.timeAgo}
+                            </span>
+                          </div>
+                        </td>
+                        <td>{formatDate(createdAt)}</td>
+                        <td>{formatDate(lastActiveAt)}</td>
                         <td>
                           <Link
                             to={`/admin/users/${userId}`}
