@@ -1,16 +1,51 @@
-# React + Vite
+# Expense Management System Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is the frontend of an Expense Management System built using React. It provides a user-friendly interface to manage daily expenses and communicates with a Spring Boot backend using REST APIs.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Add, update, and delete expenses
 
-## React Compiler
+View all expenses
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Filter expenses by date, amount, and payment mode
 
-## Expanding the ESLint configuration
+Display total expenses dynamically
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Responsive user interface
+
+## Tech Stack
+
+React
+
+JavaScript (ES6)
+
+HTML
+
+CSS
+
+Fetch API
+
+## Backend Integration
+
+The frontend integrates with a Spring Boot backend that exposes REST APIs for expense management operations. Ensure the backend server is running before starting the frontend application.
+
+## Installation and Setup
+### Prerequisites
+
+Node.js
+
+npm
+
+### Steps to Run
+git clone <repository-url>
+cd expense-management-frontend
+npm install
+npm run dev
+
+
+The application will be available at http://localhost:5173.
+
+## Project Status
+
+This project is under active development and new features are being added regularly.
