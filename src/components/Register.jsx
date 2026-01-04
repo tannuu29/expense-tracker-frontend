@@ -1,37 +1,23 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './AuthForms.css'
 
 const API_BASE_URL = "http://localhost:80"
 
-export default function SignUp({ onClose, onSwitchToLogin }) {
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        onClose()
-      }
-    }
-
-    document.addEventListener('keydown', handleEscape)
-    document.body.style.overflow = 'hidden' // Prevent background scrolling
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'unset'
-    }
-  }, [onClose])
+export default function Register() {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState({
     name: '',
     username: '',
     email: '',
     mobile: '',
-    password: '',
-    confirmPassword: ''
+    password: ''
   })
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [submitSuccess, setSubmitSuccess] = useState('')
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -45,6 +31,11 @@ export default function SignUp({ onClose, onSwitchToLogin }) {
         ...prev,
         [name]: ''
       }))
+    }
+    // Clear success/error messages when user starts typing
+    if (submitError || submitSuccess) {
+      setSubmitError('')
+      setSubmitSuccess('')
     }
   }
 
@@ -81,12 +72,6 @@ export default function SignUp({ onClose, onSwitchToLogin }) {
       newErrors.password = 'Password must be at least 6 characters'
     }
 
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password'
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match'
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -94,6 +79,7 @@ export default function SignUp({ onClose, onSwitchToLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitError('')
+    setSubmitSuccess('')
     
     if (!validateForm()) {
       return
@@ -133,9 +119,13 @@ export default function SignUp({ onClose, onSwitchToLogin }) {
         return
       }
 
-      // Success - close modal and switch to login
-      onClose()
-      onSwitchToLogin()
+      // Success
+      setSubmitSuccess('Registration successful! Redirecting to login...')
+      
+      // Redirect to /login after 1.5 seconds
+      setTimeout(() => {
+        navigate('/login', { replace: true })
+      }, 1500)
 
     } catch (error) {
       console.error('Registration error:', error)
@@ -149,15 +139,8 @@ export default function SignUp({ onClose, onSwitchToLogin }) {
   }
 
   return (
-    <div className="auth-modal-overlay" onClick={onClose}>
-      <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="auth-close-btn" onClick={onClose} aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-
+    <div className="register-page-container">
+      <div className="register-form-container">
         <div className="auth-header">
           <h2 className="auth-title">Create Account</h2>
           <p className="auth-subtitle">Join MoneyMap and start tracking your expenses</p>
@@ -264,52 +247,15 @@ export default function SignUp({ onClose, onSwitchToLogin }) {
             {errors.password && <span className="error-message">{errors.password}</span>}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="confirmPassword" className="form-label">
-              Confirm Password
-            </label>
-            <div className="password-input-wrapper">
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                id="confirmPassword"
-                name="confirmPassword"
-                className={`form-input ${errors.confirmPassword ? 'form-input-error' : ''}`}
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-              >
-                {showConfirmPassword ? (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                    <line x1="1" y1="1" x2="23" y2="23"></line>
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
-                )}
-              </button>
-            </div>
-            {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
-          </div>
-
-          <div className="form-options">
-            <label className="checkbox-label">
-              <input type="checkbox" className="checkbox-input" required />
-              <span>I agree to the Terms and Conditions</span>
-            </label>
-          </div>
-
           {submitError && (
             <div className="error-message" style={{ marginBottom: '16px', textAlign: 'center' }}>
               {submitError}
+            </div>
+          )}
+
+          {submitSuccess && (
+            <div className="success-message" style={{ marginBottom: '16px', textAlign: 'center', color: '#28a745' }}>
+              {submitSuccess}
             </div>
           )}
 
@@ -325,7 +271,11 @@ export default function SignUp({ onClose, onSwitchToLogin }) {
         <div className="auth-footer">
           <p>
             Already have an account?{' '}
-            <button type="button" className="auth-switch-link" onClick={onSwitchToLogin}>
+            <button 
+              type="button" 
+              className="auth-switch-link" 
+              onClick={() => navigate('/login')}
+            >
               Login
             </button>
           </p>
