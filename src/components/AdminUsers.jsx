@@ -119,8 +119,8 @@ export default function AdminUsers() {
         } else if (filter === "users") {
           // Load only users
           const res = await fetchWithAuth(`${API_BASE_URL}/admin/onlyUsers`, {
-            method: "GET",
-          });
+          method: "GET",
+        });
 
           if (res.status === 401 || res.status === 403) {
             setError("Unauthorized. Please login again.");
@@ -128,19 +128,19 @@ export default function AdminUsers() {
             return;
           }
 
-          if (!res.ok) {
-            let message = `Request failed (${res.status})`;
-            try {
-              const data = await res.json();
-              if (data?.message) message = data.message;
-            } catch {
-              // ignore JSON parse errors
-            }
-            throw new Error(message);
+        if (!res.ok) {
+          let message = `Request failed (${res.status})`;
+          try {
+            const data = await res.json();
+            if (data?.message) message = data.message;
+          } catch {
+            // ignore JSON parse errors
           }
+          throw new Error(message);
+        }
 
-          const data = await res.json();
-          setUsers(Array.isArray(data) ? data : []);
+        const data = await res.json();
+        setUsers(Array.isArray(data) ? data : []);
           setAdmins([]);
         } else {
           // Load all users (combine admins and users)
@@ -263,11 +263,11 @@ export default function AdminUsers() {
           <div className="error-state">{error}</div>
         )}
 
-        {!loading && !error && (
+      {!loading && !error && (
           <div className="users-table-container">
             <table className="users-table">
-              <thead>
-                <tr>
+            <thead>
+              <tr>
                   <th>ID</th>
                   <th>Username</th>
                   <th>Email</th>
@@ -276,17 +276,17 @@ export default function AdminUsers() {
                   <th>Created At</th>
                   <th>Last Active</th>
                   <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+              </tr>
+            </thead>
+            <tbody>
                 {filteredUsers.length === 0 ? (
-                  <tr>
+                <tr>
                     <td colSpan={8} className="empty-state">
                       <div className="empty-state-icon">👥</div>
                       <div>No {filter === "all" ? "" : filter} found.</div>
-                    </td>
-                  </tr>
-                ) : (
+                  </td>
+                </tr>
+              ) : (
                   filteredUsers.map((u, idx) => {
                     // Map backend fields: userId, name, username, email, mobile, role, createdAt, lastActiveAt
                     const userId = u?.userId ?? u?.id ?? u?._id ?? idx;
@@ -327,7 +327,7 @@ export default function AdminUsers() {
                                 : activityStatus.timeAgo}
                             </span>
                           </div>
-                        </td>
+                    </td>
                         <td>{formatDate(createdAt)}</td>
                         <td>{formatDate(lastActiveAt)}</td>
                         <td>
@@ -336,16 +336,16 @@ export default function AdminUsers() {
                             className="view-link"
                           >
                             View Details
-                          </Link>
-                        </td>
-                      </tr>
+                      </Link>
+                    </td>
+                  </tr>
                     );
                   })
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import './AuthForms.css'
 
 const API_BASE_URL = "http://localhost:80"
 
-export default function Login({ onClose, onSwitchToSignUp }) {
+export default function Login({ onClose, onSwitchToSignUp, registrationSuccess, onClearRegistrationSuccess }) {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
     usernameOrEmail: '',
@@ -14,6 +14,13 @@ export default function Login({ onClose, onSwitchToSignUp }) {
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [loginError, setLoginError] = useState('')
+
+  // Clear registration success message when user starts typing
+  useEffect(() => {
+    if (registrationSuccess && formData.usernameOrEmail) {
+      onClearRegistrationSuccess?.()
+    }
+  }, [formData.usernameOrEmail, registrationSuccess, onClearRegistrationSuccess])
 
   useEffect(() => {
     const handleEscape = (e) => {
@@ -174,6 +181,20 @@ export default function Login({ onClose, onSwitchToSignUp }) {
         <div className="auth-header">
           <h2 className="auth-title">Welcome Back</h2>
           <p className="auth-subtitle">Login to your MoneyMap account</p>
+          {registrationSuccess && (
+            <div className="success-message" style={{ 
+              marginTop: '16px', 
+              padding: '12px', 
+              backgroundColor: '#d4edda', 
+              border: '1px solid #c3e6cb', 
+              borderRadius: '8px',
+              color: '#155724',
+              textAlign: 'center',
+              fontSize: '0.9rem'
+            }}>
+              {registrationSuccess.message}
+            </div>
+          )}
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>

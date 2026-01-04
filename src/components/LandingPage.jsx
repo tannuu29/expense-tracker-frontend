@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import photo from '../assets/expense_logo.png'
 import './LandingPage.css'
 import Login from './Login'
 import SignUp from './SignUp'
 
 export default function LandingPage() {
+  const location = useLocation()
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme') || 'dark'
     return savedTheme
   })
   const [showLogin, setShowLogin] = useState(false)
   const [showSignUp, setShowSignUp] = useState(false)
+  const [registrationSuccess, setRegistrationSuccess] = useState(null)
   const [selectedUserType, setSelectedUserType] = useState('Employees')
   const [openFaq, setOpenFaq] = useState(null)
   const [emailOrPhone, setEmailOrPhone] = useState('')
@@ -28,6 +31,20 @@ export default function LandingPage() {
     document.body.style.backgroundColor = savedTheme === 'dark' ? '#1a3e2e' : '#f5f5f5'
     document.body.style.color = savedTheme === 'dark' ? 'rgba(255, 255, 255, 0.87)' : '#1a1a1a'
   }, [])
+
+  // Check for registration success from navigation state
+  useEffect(() => {
+    if (location.state?.registrationSuccess) {
+      setRegistrationSuccess({
+        username: location.state.username,
+        message: 'Your account is successfully created'
+      })
+      setShowLogin(true)
+      setShowSignUp(false)
+      // Clear the state to prevent showing message again on refresh
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
 
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'dark' ? 'light' : 'dark')
@@ -340,7 +357,14 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {showLogin && <Login onClose={handleCloseAuth} onSwitchToSignUp={switchToSignUp} />}
+      {showLogin && (
+        <Login 
+          onClose={handleCloseAuth} 
+          onSwitchToSignUp={switchToSignUp}
+          registrationSuccess={registrationSuccess}
+          onClearRegistrationSuccess={() => setRegistrationSuccess(null)}
+        />
+      )}
       {showSignUp && <SignUp onClose={handleCloseAuth} onSwitchToLogin={switchToLogin} />}
     </div>
   )

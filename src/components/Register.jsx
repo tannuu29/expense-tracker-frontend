@@ -119,12 +119,16 @@ export default function Register() {
         return
       }
 
-      // Success
-      setSubmitSuccess('Registration successful! Redirecting to login...')
+      // Success - get response data and show confirmation message
+      const data = await response.json()
+      setSubmitSuccess(`Welcome ${data.username}, account created!`)
       
-      // Redirect to /login after 1.5 seconds
+      // Redirect to landing page with success message after 1.5 seconds
       setTimeout(() => {
-        navigate('/login', { replace: true })
+        navigate('/', { 
+          replace: true,
+          state: { registrationSuccess: true, username: data.username }
+        })
       }, 1500)
 
     } catch (error) {

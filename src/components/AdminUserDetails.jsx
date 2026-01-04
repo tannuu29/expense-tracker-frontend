@@ -65,7 +65,7 @@ export default function AdminUserDetails() {
 
     const role = localStorage.getItem("role");
     if (role === "ADMIN") {
-      load();
+    load();
     }
   }, [id]);
 
