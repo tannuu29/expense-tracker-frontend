@@ -1,7 +1,8 @@
 /**
  * Global authentication fetch helper
  * Provides a standardized way to make authenticated API calls
- * Automatically handles 401/403 responses by logging out and redirecting
+ * Handles 401 (unauthorized) by logging out and redirecting
+ * Handles 403 (forbidden) by throwing an error without logging out
  * 
  * @param {string} url - The API endpoint URL
  * @param {object} options - Fetch options (method, body, headers, etc.)
@@ -25,11 +26,10 @@ export const fetchWithAuth = async (url, options = {}) => {
     headers,
   });
 
-  // Handle expired/invalid tokens globally
-  if (response.status === 401 || response.status === 403) {
+  // Handle 401: Token expired or invalid → logout and redirect
+  if (response.status === 401) {
     // Clear authentication data
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
+    localStorage.clear();
     
     // Show alert and redirect
     alert('Session expired. Please login again.');
@@ -37,6 +37,11 @@ export const fetchWithAuth = async (url, options = {}) => {
     
     // Return the response so calling code can handle it if needed
     return response;
+  }
+
+  // Handle 403: Forbidden → DO NOT LOGOUT, just throw error
+  if (response.status === 403) {
+    throw new Error('Forbidden');
   }
 
   return response;

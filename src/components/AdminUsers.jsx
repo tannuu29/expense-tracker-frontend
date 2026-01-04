@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fetchWithAuth, API_BASE_URL } from "../utils/auth";
 import { formatDate, getActivityStatus } from "../utils/dateUtils";
+import AdminActivityChart from "./AdminActivityChart";
 import "./AdminUsers.css";
 
 export default function AdminUsers() {
@@ -251,6 +252,9 @@ export default function AdminUsers() {
             </button>
           </div>
         </div>
+
+        {/* Activity Chart */}
+        <AdminActivityChart />
 
         {loading && (
           <div className="loading-state">Loading users…</div>
