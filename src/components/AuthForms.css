@@ -338,3 +338,35 @@
   }
 }
 
+/* Register Page Container (for standalone pages like Register, ForgotPassword, ResetPassword) */
+.register-page-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: var(--bg-tertiary);
+  transition: background-color 0.3s ease;
+}
+
+.register-form-container {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px var(--shadow-color);
+  width: 100%;
+  max-width: 450px;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+/* Success message styling */
+.success-message {
+  padding: 12px;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  color: #155724;
+  font-size: 0.9rem;
+  text-align: center;
+}
+

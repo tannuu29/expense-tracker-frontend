@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import './AuthForms.css'
+
 
 const API_BASE_URL = "http://localhost:80"
 
 export default function Login({ onClose, onSwitchToSignUp, registrationSuccess, onClearRegistrationSuccess }) {
   const navigate = useNavigate()
+  const location = useLocation()
+
   const [formData, setFormData] = useState({
     usernameOrEmail: '',
     password: ''
@@ -167,7 +170,7 @@ export default function Login({ onClose, onSwitchToSignUp, registrationSuccess, 
       setIsLoading(false)
     }
   }
-
+ 
   return (
     <div className="auth-modal-overlay" onClick={onClose}>
       <div className="auth-modal" onClick={(e) => e.stopPropagation()}>
@@ -177,6 +180,12 @@ export default function Login({ onClose, onSwitchToSignUp, registrationSuccess, 
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
+
+{location.state?.registered && (
+  <div className="success-message">
+    Registration successful! Please login.
+  </div>
+)}
 
         <div className="auth-header">
           <h2 className="auth-title">Welcome Back</h2>
@@ -255,7 +264,14 @@ export default function Login({ onClose, onSwitchToSignUp, registrationSuccess, 
               <input type="checkbox" className="checkbox-input" />
               <span>Remember me</span>
             </label>
-            <button type="button" className="forgot-password-link">
+            <button 
+              type="button" 
+              className="forgot-password-link"
+              onClick={() => {
+                onClose()
+                navigate('/forgot-password')
+              }}
+            >
               Forgot password?
             </button>
           </div>

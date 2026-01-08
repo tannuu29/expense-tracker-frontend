@@ -125,10 +125,10 @@ export default function Register() {
       
       // Redirect to landing page with success message after 1.5 seconds
       setTimeout(() => {
-        navigate('/', { 
-          replace: true,
-          state: { registrationSuccess: true, username: data.username }
-        })
+        navigate('/login', {
+  replace: true,
+  state: { registered: true }
+})
       }, 1500)
 
     } catch (error) {

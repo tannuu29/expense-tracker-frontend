@@ -6,6 +6,8 @@ import About from './components/About'
 import ContactUs from './components/ContactUs'
 import Profile from './components/Profile'
 import ChangePassword from './components/ChangePassword'
+import ForgotPassword from './components/ForgotPassword'
+import ResetPassword from './components/ResetPassword'
 import AdminUsers from './components/AdminUsers'
 import AdminRoute from './components/AdminRoute'
 import AdminLogin from './components/AdminLogin'
@@ -20,6 +22,8 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/change-password" element={<ChangePassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/admin/login" element={<AdminLogin />} />
