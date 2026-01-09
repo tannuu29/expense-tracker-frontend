@@ -19,8 +19,8 @@ export default function AdminHeader() {
         </Link>
 
         <nav className="admin-header-nav">
-          <NavLink to="/admin/users" className="admin-header-nav-link">
-            Users
+          <NavLink to="/admin/profile" className="admin-header-nav-link">
+            Profile
           </NavLink>
           <button
             type="button"
